@@ -13,6 +13,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:8080',
+      '/keycloak': {
+        target: 'https://keycloak.prod.transcapital.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/keycloak/, ''),
+      },
     },
   },
 })
