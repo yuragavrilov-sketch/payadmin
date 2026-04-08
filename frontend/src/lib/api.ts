@@ -7,7 +7,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     const refreshed = await refreshAccessToken()
     if (!refreshed) {
       logout()
-      window.location.href = '/login'
       throw new Error('Session expired')
     }
   }
@@ -24,7 +23,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   if (res.status === 401) {
     logout()
-    window.location.href = '/login'
     throw new Error('Unauthorized')
   }
 
