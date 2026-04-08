@@ -15,8 +15,28 @@ services:
     build: ./backend
     expose:
       - "8080"
+    depends_on:
+      - postgres
     environment:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:oracle:thin:@//host:1521/service}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-payadmin}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-payadmin}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${KEYCLOAK_ISSUER_URI:-http://localhost:8180/realms/payadmin}
+      - MGMT_DATASOURCE_URL=jdbc:postgresql://postgres:5432/payadmin_mgmt
+      - MGMT_DATASOURCE_USERNAME=${POSTGRES_USER:-payadmin}
+      - MGMT_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-payadmin}
+      - WINRM_ENCRYPTION_KEY=${WINRM_ENCRYPTION_KEY:-docker-dev-key-min16}
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payadmin_mgmt
+      POSTGRES_USER: ${POSTGRES_USER:-payadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payadmin}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+volumes:
+  pgdata:
