@@ -14,6 +14,7 @@ interface MerchantTableProps {
   merchants: MerchantListItem[]
   totalElements: number
   page: number
+  pageSize: number
   totalPages: number
   onPageChange: (page: number) => void
   onRowClick: (mercid: number) => void
@@ -23,6 +24,7 @@ export default function MerchantTable({
   merchants,
   totalElements,
   page,
+  pageSize,
   totalPages,
   onPageChange,
   onRowClick,
@@ -62,7 +64,7 @@ export default function MerchantTable({
 
       <div className="flex items-center justify-between mt-4">
         <span className="text-sm text-slate-400">
-          Showing {page * 20 + 1}–{Math.min((page + 1) * 20, totalElements)} of{' '}
+          Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, totalElements)} of{' '}
           {totalElements.toLocaleString()}
         </span>
         <div className="flex gap-1">

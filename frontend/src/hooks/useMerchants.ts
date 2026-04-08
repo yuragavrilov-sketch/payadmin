@@ -26,7 +26,7 @@ export interface MerchantConfig {
   dateEnd: string
 }
 
-interface PageResponse<T> {
+export interface PageResponse<T> {
   content: T[]
   totalElements: number
   totalPages: number
@@ -40,6 +40,7 @@ export function useMerchantList(search: string, page: number, size: number = 20)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
 
@@ -50,10 +51,16 @@ export function useMerchantList(search: string, page: number, size: number = 20)
     })
     if (search) params.set('search', search)
 
-    apiFetch<PageResponse<MerchantListItem>>(`/merchants?${params}`)
+    apiFetch<PageResponse<MerchantListItem>>(`/merchants?${params}`, { signal: controller.signal })
       .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+      .catch((e) => {
+        if (e.name !== 'AbortError') setError(e.message)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [search, page, size])
 
   return { data, loading, error }
@@ -63,32 +70,40 @@ export function useMerchantDetail(mercid: number | null) {
   const [detail, setDetail] = useState<MerchantDetail | null>(null)
   const [config, setConfig] = useState<MerchantConfig[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const fetchDetail = useCallback(async (id: number) => {
+  const fetchDetail = useCallback(async (id: number, signal: AbortSignal) => {
     setLoading(true)
+    setError(null)
     try {
       const [detailData, configData] = await Promise.all([
-        apiFetch<MerchantDetail>(`/merchants/${id}`),
-        apiFetch<MerchantConfig[]>(`/merchants/${id}/config`),
+        apiFetch<MerchantDetail>(`/merchants/${id}`, { signal }),
+        apiFetch<MerchantConfig[]>(`/merchants/${id}/config`, { signal }),
       ])
       setDetail(detailData)
       setConfig(configData)
-    } catch {
-      setDetail(null)
-      setConfig([])
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name !== 'AbortError') {
+        setError(e.message)
+        setDetail(null)
+        setConfig([])
+      }
     } finally {
-      setLoading(false)
+      if (!signal.aborted) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     if (mercid !== null) {
-      fetchDetail(mercid)
+      const controller = new AbortController()
+      fetchDetail(mercid, controller.signal)
+      return () => controller.abort()
     } else {
       setDetail(null)
       setConfig([])
+      setError(null)
     }
   }, [mercid, fetchDetail])
 
-  return { detail, config, loading }
+  return { detail, config, loading, error }
 }

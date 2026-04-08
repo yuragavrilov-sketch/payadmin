@@ -13,6 +13,7 @@ interface MerchantDetailModalProps {
   detail: MerchantDetail | null
   config: MerchantConfig[]
   loading: boolean
+  error: string | null
 }
 
 export default function MerchantDetailModal({
@@ -21,11 +22,14 @@ export default function MerchantDetailModal({
   detail,
   config,
   loading,
+  error,
 }: MerchantDetailModalProps) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
-        {loading || !detail ? (
+        {error ? (
+          <div className="flex items-center justify-center py-12 text-red-500 text-sm">{error}</div>
+        ) : loading || !detail ? (
           <div className="flex items-center justify-center py-12 text-slate-400">Loading...</div>
         ) : (
           <>

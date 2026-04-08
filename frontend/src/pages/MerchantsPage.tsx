@@ -10,7 +10,7 @@ export default function MerchantsPage() {
   const [selectedMercid, setSelectedMercid] = useState<number | null>(null)
 
   const { data, loading, error } = useMerchantList(search, page)
-  const { detail, config, loading: detailLoading } = useMerchantDetail(selectedMercid)
+  const { detail, config, loading: detailLoading, error: detailError } = useMerchantDetail(selectedMercid)
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value)
@@ -62,6 +62,7 @@ export default function MerchantsPage() {
           merchants={data.content}
           totalElements={data.totalElements}
           page={data.number}
+          pageSize={data.size}
           totalPages={data.totalPages}
           onPageChange={setPage}
           onRowClick={setSelectedMercid}
@@ -74,6 +75,7 @@ export default function MerchantsPage() {
         detail={detail}
         config={config}
         loading={detailLoading}
+        error={detailError}
       />
     </div>
   )

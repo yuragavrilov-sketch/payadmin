@@ -17,10 +17,22 @@ const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'payadmin-
 
 const TOKEN_URL = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`
 
-const state: AuthState = {
-  accessToken: null,
-  refreshToken: null,
-  expiresAt: null,
+const STORAGE_KEY = 'payadmin_auth'
+
+const state: AuthState = loadState()
+
+function loadState(): AuthState {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  return { accessToken: null, refreshToken: null, expiresAt: null }
+}
+
+function persistState(): void {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch { /* ignore */ }
 }
 
 export async function login(username: string, password: string): Promise<void> {
@@ -49,6 +61,8 @@ export function logout(): void {
   state.accessToken = null
   state.refreshToken = null
   state.expiresAt = null
+  cachedUserInfo = null
+  try { sessionStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
 }
 
 export function getAccessToken(): string | null {
@@ -85,14 +99,21 @@ export async function refreshAccessToken(): Promise<boolean> {
   }
 }
 
+let cachedUserInfo: { username: string; roles: string[] } | null = null
+let cachedToken: string | null = null
+
 export function getUserInfo(): { username: string; roles: string[] } | null {
   if (!state.accessToken) return null
+  if (cachedToken === state.accessToken && cachedUserInfo) return cachedUserInfo
+
   try {
     const payload = JSON.parse(atob(state.accessToken.split('.')[1]))
-    return {
+    cachedToken = state.accessToken
+    cachedUserInfo = {
       username: payload.preferred_username || payload.sub,
       roles: payload.realm_access?.roles || [],
     }
+    return cachedUserInfo
   } catch {
     return null
   }
@@ -102,4 +123,7 @@ function setTokens(data: TokenResponse): void {
   state.accessToken = data.access_token
   state.refreshToken = data.refresh_token
   state.expiresAt = Date.now() + data.expires_in * 1000
+  cachedUserInfo = null
+  cachedToken = null
+  persistState()
 }
