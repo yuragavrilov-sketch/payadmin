@@ -107,7 +107,8 @@ export function getUserInfo(): { username: string; roles: string[] } | null {
   if (cachedToken === state.accessToken && cachedUserInfo) return cachedUserInfo
 
   try {
-    const payload = JSON.parse(atob(state.accessToken.split('.')[1]))
+    const base64 = state.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(base64))
     cachedToken = state.accessToken
     cachedUserInfo = {
       username: payload.preferred_username || payload.sub,
