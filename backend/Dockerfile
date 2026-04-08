@@ -1,13 +1,17 @@
-FROM eclipse-temurin:17-jdk AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
+
+# SSL bypass for corporate proxy (mirrors .mvn/jvm.config)
+ENV JAVA_TOOL_OPTIONS="\
+  -Dmaven.resolver.transport=wagon \
+  -Dmaven.wagon.http.ssl.insecure=true \
+  -Dmaven.wagon.http.ssl.allowall=true \
+  -Dmaven.wagon.http.ssl.ignore.validity.dates=true"
 
 WORKDIR /app
-COPY .mvn .mvn
-COPY mvnw .
-RUN chmod +x mvnw
 COPY pom.xml .
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 COPY src ./src
-RUN ./mvnw package -DskipTests -B
+RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
