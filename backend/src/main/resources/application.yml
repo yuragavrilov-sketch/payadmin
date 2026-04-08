@@ -10,14 +10,32 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: oracle.jdbc.OracleDriver
+  management-datasource:
+    url: ${MGMT_DATASOURCE_URL}
+    username: ${MGMT_DATASOURCE_USERNAME}
+    password: ${MGMT_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     database-platform: org.hibernate.dialect.OracleDialect
+  flyway:
+    enabled: true
+    url: ${MGMT_DATASOURCE_URL}
+    user: ${MGMT_DATASOURCE_USERNAME}
+    password: ${MGMT_DATASOURCE_PASSWORD}
+    locations: classpath:db/migration/management
+    baseline-on-migrate: true
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI}
+
+winrm:
+  encryption-key: ${WINRM_ENCRYPTION_KEY}
+  monitor:
+    interval: ${WINRM_MONITOR_INTERVAL:60000}
+    timeout: ${WINRM_TIMEOUT:30000}

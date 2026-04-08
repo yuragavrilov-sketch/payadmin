@@ -3,8 +3,15 @@ spring:
     url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
     username: payadmin
     password: payadmin
+  management-datasource:
+    url: jdbc:postgresql://localhost:5432/payadmin_mgmt
+    username: payadmin
+    password: payadmin
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8180/realms/payadmin
+
+winrm:
+  encryption-key: dev-key-minimum-16-chars
