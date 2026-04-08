@@ -36,13 +36,17 @@ export default function AppSidebar() {
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
     >
-      <div className="p-2.5 mb-2">
+      {/* Brand */}
+      <div className="p-2.5">
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
           PA
         </div>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1 px-2">
+      <div className="mx-2.5 border-t border-slate-100" />
+
+      {/* Navigation */}
+      <nav className="flex-1 flex flex-col gap-0.5 px-2 mt-2">
         {navItems.map((item) => {
           const active = location.pathname === item.path
           return (
@@ -51,14 +55,17 @@ export default function AppSidebar() {
               onClick={() => !item.disabled && navigate(item.path)}
               disabled={item.disabled}
               className={cn(
-                'flex items-center gap-3 rounded-lg p-2 text-sm transition-colors',
+                'relative flex items-center gap-3 rounded-lg p-2 text-sm transition-colors',
                 active
-                  ? 'bg-blue-50 text-blue-600'
+                  ? 'bg-blue-50 text-blue-600 font-medium'
                   : item.disabled
                     ? 'text-slate-300 cursor-not-allowed'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
               )}
             >
+              {active && (
+                <div className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-blue-600" />
+              )}
               <item.icon className="w-5 h-5 shrink-0" />
               {expanded && <span className="whitespace-nowrap">{item.label}</span>}
             </button>
@@ -66,9 +73,10 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      <div className="p-2 border-t border-slate-200">
+      {/* User */}
+      <div className="p-2 border-t border-slate-100">
         <div className="flex items-center gap-2 p-2">
-          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-xs font-semibold shrink-0">
+          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
             {user?.username?.substring(0, 2).toUpperCase() || '??'}
           </div>
           {expanded && (
