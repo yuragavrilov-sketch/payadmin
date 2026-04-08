@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, CreditCard, Settings, LogOut } from 'lucide-react'
+import { Home, CreditCard, Settings, LogOut, Server, Activity, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getUserInfo, logout } from '@/lib/auth'
 
@@ -8,6 +8,12 @@ const navItems = [
   { icon: Home, label: 'Merchants', path: '/merchants' },
   { icon: CreditCard, label: 'Transactions', path: '/transactions', disabled: true },
   { icon: Settings, label: 'Settings', path: '/settings', disabled: true },
+]
+
+const infraItems = [
+  { icon: Server, label: 'Hosts', path: '/infra/hosts' },
+  { icon: Activity, label: 'Monitoring', path: '/infra/monitoring' },
+  { icon: ClipboardList, label: 'Audit Log', path: '/infra/audit' },
 ]
 
 export default function AppSidebar() {
@@ -20,6 +26,8 @@ export default function AppSidebar() {
     logout()
     navigate('/login')
   }
+
+  const isInfraAdmin = user?.roles.includes('WINRM_ADMIN') ?? false
 
   const roleLabel = user?.roles.includes('ADMIN')
     ? 'ADMIN'
@@ -71,6 +79,38 @@ export default function AppSidebar() {
             </button>
           )
         })}
+
+        {isInfraAdmin && (
+          <>
+            <div className="mx-0.5 my-2 border-t border-slate-100" />
+            {expanded && (
+              <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                Infrastructure
+              </div>
+            )}
+            {infraItems.map((item) => {
+              const active = location.pathname === item.path
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    'relative flex items-center gap-3 rounded-lg p-2 text-sm transition-colors',
+                    active
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                  )}
+                >
+                  {active && (
+                    <div className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-blue-600" />
+                  )}
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  {expanded && <span className="whitespace-nowrap">{item.label}</span>}
+                </button>
+              )
+            })}
+          </>
+        )}
       </nav>
 
       {/* User */}
