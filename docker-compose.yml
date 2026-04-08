@@ -7,7 +7,7 @@ services:
         VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-svcmgr}
         VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-payadmin-frontend}
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
 
