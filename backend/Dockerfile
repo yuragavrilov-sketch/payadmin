@@ -2,16 +2,17 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 
 # Grab proxy CA certs and import into JVM truststore
 RUN echo | openssl s_client -showcerts -connect repo.maven.apache.org:443 2>/dev/null \
-    | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ print > "/tmp/cert-" ++n ".pem" }' \
-    && for f in /tmp/cert-*.pem; do \
-         echo "Importing $f ..."; \
-         openssl x509 -in "$f" -noout -subject -issuer; \
-         keytool -importcert -noprompt -trustcacerts \
-           -alias "proxy-$(basename $f .pem)" \
-           -file "$f" \
-           -keystore "$JAVA_HOME/lib/security/cacerts" \
-           -storepass changeit; \
-       done
+    | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > /tmp/chain.pem \
+    && i=0 && while openssl x509 -outform PEM -out /tmp/cert-$i.pem -in /tmp/chain.pem 2>/dev/null; do \
+         echo "=== Certificate $i ==="; \
+         openssl x509 -in /tmp/cert-$i.pem -noout -subject -issuer -dates; \
+         keytool -importcert -noprompt -cacerts \
+           -alias "proxy-$i" \
+           -file /tmp/cert-$i.pem \
+           -storepass changeit || true; \
+         sed -i '1,/END CERTIFICATE/d' /tmp/chain.pem; \
+         i=$((i+1)); \
+       done && echo "Imported $i certificate(s)"
 
 WORKDIR /app
 COPY pom.xml .
