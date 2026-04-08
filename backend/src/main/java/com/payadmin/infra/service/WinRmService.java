@@ -17,6 +17,9 @@ public class WinRmService {
     @Value("${winrm.monitor.timeout:30000}")
     private int timeout;
 
+    @Value("${winrm.disable-cert-checks:false}")
+    private boolean disableCertChecks;
+
     public record CommandResult(int exitCode, String stdout, String stderr) {}
 
     public CommandResult execute(String hostname, int port, boolean useHttps,
@@ -34,7 +37,7 @@ public class WinRmService {
                 builder.credentials(username, password);
             }
 
-            builder.disableCertificateChecks(useHttps)
+            builder.disableCertificateChecks(disableCertChecks)
                     .operationTimeout((long) timeout);
 
             WinRmClient client = builder.build();

@@ -108,7 +108,7 @@ class MerchantServiceTest {
         config.setDateBegin(LocalDate.of(2024, 1, 1));
         config.setDateEnd(LocalDate.of(2050, 1, 1));
 
-        when(merchantRepository.findById(1001)).thenReturn(Optional.of(sampleMerchant));
+        when(merchantRepository.existsById(1001)).thenReturn(true);
         when(mercConfigRepository.findActiveByMercid(1001)).thenReturn(List.of(config));
 
         List<MerchantConfigDto> result = merchantService.getConfig(1001);

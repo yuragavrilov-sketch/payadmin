@@ -1,7 +1,7 @@
 package com.payadmin.infra.controller;
 
 import com.payadmin.infra.dto.AuditLogDto;
-import com.payadmin.infra.repository.AuditLogRepository;
+import com.payadmin.infra.service.AuditQueryService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
 @PreAuthorize("hasRole('WINRM_ADMIN')")
 public class AuditController {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditQueryService auditQueryService;
 
-    public AuditController(AuditLogRepository auditLogRepository) {
-        this.auditLogRepository = auditLogRepository;
+    public AuditController(AuditQueryService auditQueryService) {
+        this.auditQueryService = auditQueryService;
     }
 
     @GetMapping
@@ -28,15 +28,6 @@ public class AuditController {
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String action,
             Pageable pageable) {
-        return auditLogRepository.findFiltered(from, to, username, action, pageable)
-                .map(a -> new AuditLogDto(
-                        a.getId(),
-                        a.getTimestamp(),
-                        a.getUsername(),
-                        a.getAction(),
-                        a.getHost() != null ? a.getHost().getHostname() : null,
-                        a.getServiceName(),
-                        a.getResult(),
-                        a.getErrorDetail()));
+        return auditQueryService.findFiltered(from, to, username, action, pageable);
     }
 }

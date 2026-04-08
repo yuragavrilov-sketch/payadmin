@@ -78,4 +78,15 @@ public class MonitoredServiceService {
         monitoredServiceRepository.delete(ms);
         auditService.log("SERVICE_DELETE", ms.getHost(), ms.getServiceName(), "OK", null);
     }
+
+    @Transactional("managementTransactionManager")
+    public void deleteWithOwnerCheck(Integer hostId, Integer serviceId) {
+        MonitoredService ms = monitoredServiceRepository.findById(serviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Monitored service not found"));
+        if (!ms.getHost().getId().equals(hostId)) {
+            throw new IllegalArgumentException("Service does not belong to this host");
+        }
+        auditService.log("SERVICE_DELETE", ms.getHost(), ms.getServiceName(), "Success", null);
+        monitoredServiceRepository.delete(ms);
+    }
 }

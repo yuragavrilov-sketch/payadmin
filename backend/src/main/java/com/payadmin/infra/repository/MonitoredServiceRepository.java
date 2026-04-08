@@ -2,6 +2,7 @@ package com.payadmin.infra.repository;
 
 import com.payadmin.infra.entity.MonitoredService;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -9,4 +10,7 @@ public interface MonitoredServiceRepository extends JpaRepository<MonitoredServi
     List<MonitoredService> findByHostId(Integer hostId);
     long countByGroupId(Integer groupId);
     long countByHostId(Integer hostId);
+
+    @Query("SELECT ms FROM MonitoredService ms JOIN FETCH ms.host JOIN FETCH ms.group")
+    List<MonitoredService> findAllWithHostAndGroup();
 }

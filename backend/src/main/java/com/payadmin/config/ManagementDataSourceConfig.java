@@ -41,7 +41,7 @@ public class ManagementDataSourceConfig {
                 .dataSource(managementDataSource())
                 .packages("com.payadmin.infra.entity")
                 .persistenceUnit("management")
-                .properties(Map.of("hibernate.hbm2ddl.auto", "validate"))
+                .properties(Map.of("hibernate.hbm2ddl.auto", "none"))
                 .build();
     }
 

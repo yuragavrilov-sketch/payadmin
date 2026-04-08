@@ -52,8 +52,9 @@ public class MerchantService {
     }
 
     public List<MerchantConfigDto> getConfig(Integer mercid) {
-        merchantRepository.findById(mercid)
-                .orElseThrow(() -> new MerchantNotFoundException(mercid));
+        if (!merchantRepository.existsById(mercid)) {
+            throw new MerchantNotFoundException(mercid);
+        }
         return mercConfigRepository.findActiveByMercid(mercid).stream()
                 .map(mc -> new MerchantConfigDto(
                         mc.getParameterName(),

@@ -13,7 +13,7 @@ public interface MercConfigRepository extends JpaRepository<MercConfig, MercConf
             SELECT mc FROM MercConfig mc
             WHERE mc.mercid = :mercid
               AND mc.dateBegin <= CURRENT_DATE
-              AND mc.dateEnd > CURRENT_DATE
+              AND (mc.dateEnd IS NULL OR mc.dateEnd > CURRENT_DATE)
             ORDER BY mc.parameterName
             """)
     List<MercConfig> findActiveByMercid(@Param("mercid") Integer mercid);

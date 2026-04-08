@@ -29,7 +29,7 @@ public class MonitoringService {
     private final WinRmService winRmService;
     private final CryptoService cryptoService;
     private final AuditService auditService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public MonitoringService(MonitoredServiceRepository monitoredServiceRepository,
                              ServiceStatusLogRepository serviceStatusLogRepository,
@@ -38,7 +38,8 @@ public class MonitoringService {
                              CredentialRepository credentialRepository,
                              WinRmService winRmService,
                              CryptoService cryptoService,
-                             AuditService auditService) {
+                             AuditService auditService,
+                             ObjectMapper objectMapper) {
         this.monitoredServiceRepository = monitoredServiceRepository;
         this.serviceStatusLogRepository = serviceStatusLogRepository;
         this.serviceGroupRepository = serviceGroupRepository;
@@ -47,11 +48,18 @@ public class MonitoringService {
         this.winRmService = winRmService;
         this.cryptoService = cryptoService;
         this.auditService = auditService;
+        this.objectMapper = objectMapper;
+    }
+
+    private void validateServiceName(String name) {
+        if (!name.matches("^[a-zA-Z0-9_\\-\\.]{1,256}$")) {
+            throw new IllegalArgumentException("Invalid service name: " + name);
+        }
     }
 
     public List<MonitoringGroupDto> getGroupedStatus() {
         List<ServiceGroup> groups = serviceGroupRepository.findAllByOrderBySortOrderAsc();
-        List<MonitoredService> allServices = monitoredServiceRepository.findAll();
+        List<MonitoredService> allServices = monitoredServiceRepository.findAllWithHostAndGroup();
 
         Map<Integer, List<MonitoredService>> servicesByGroup = allServices.stream()
                 .collect(Collectors.groupingBy(s -> s.getGroup().getId()));
@@ -119,6 +127,8 @@ public class MonitoringService {
         Credential credential = host.getCredential();
         String password = cryptoService.decrypt(credential.getPasswordEncrypted());
 
+        validateServiceName(ms.getServiceName());
+
         String psCommand = switch (action.toUpperCase()) {
             case "START" -> "Start-Service -Name '" + ms.getServiceName() + "'";
             case "STOP" -> "Stop-Service -Name '" + ms.getServiceName() + "' -Force";
@@ -142,7 +152,7 @@ public class MonitoringService {
             }
         } catch (Exception e) {
             auditService.log(action.toUpperCase(), host, ms.getServiceName(), "Failed", e.getMessage());
-            return "Failed: " + e.getMessage();
+            return "Failed: Service action could not be completed";
         }
     }
 
@@ -159,6 +169,8 @@ public class MonitoringService {
             logEntry.setCheckedAt(LocalDateTime.now());
 
             try {
+                validateServiceName(ms.getServiceName());
+
                 String psCommand = "Get-Service -Name '" + ms.getServiceName() +
                         "' | Select-Object Status,@{N='Id';E={$_.ServiceHandle}} | ConvertTo-Json";
 

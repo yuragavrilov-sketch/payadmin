@@ -46,12 +46,16 @@ public class HostController {
     }
 
     @PostMapping("/{id}/services")
-    public MonitoredServiceDto addService(@PathVariable Integer id, @Valid @RequestBody MonitoredServiceCreateDto dto) {
+    public MonitoredServiceDto addService(@PathVariable Integer id,
+                                          @Valid @RequestBody MonitoredServiceCreateDto dto) {
+        if (!id.equals(dto.hostId())) {
+            throw new IllegalArgumentException("Host ID mismatch");
+        }
         return monitoredServiceService.create(dto);
     }
 
     @DeleteMapping("/{hostId}/services/{serviceId}")
-    public void removeService(@PathVariable Integer serviceId) {
-        monitoredServiceService.delete(serviceId);
+    public void removeService(@PathVariable Integer hostId, @PathVariable Integer serviceId) {
+        monitoredServiceService.deleteWithOwnerCheck(hostId, serviceId);
     }
 }
