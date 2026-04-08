@@ -52,8 +52,6 @@ class MerchantServiceTest {
         sampleMerchant.setHierarchyId(10);
         sampleMerchant.setPaLogin("merchant01");
         sampleMerchant.setApiLogin("api_romashka");
-        sampleMerchant.setPaPassword("secret");
-        sampleMerchant.setApiPassword("secret2");
     }
 
     @Test
