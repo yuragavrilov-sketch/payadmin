@@ -10,7 +10,7 @@ ENV VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm config set strict-ssl false && npm ci
 COPY . .
 RUN npm run build
 
