@@ -41,7 +41,10 @@ public class ManagementDataSourceConfig {
                 .dataSource(managementDataSource())
                 .packages("com.payadmin.infra.entity")
                 .persistenceUnit("management")
-                .properties(Map.of("hibernate.hbm2ddl.auto", "none"))
+                .properties(Map.of(
+                        "hibernate.hbm2ddl.auto", "none",
+                        "hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect"
+                ))
                 .build();
     }
 

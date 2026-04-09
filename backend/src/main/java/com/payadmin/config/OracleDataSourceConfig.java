@@ -47,6 +47,7 @@ public class OracleDataSourceConfig {
                 .persistenceUnit("oracle")
                 .properties(Map.of(
                         "hibernate.hbm2ddl.auto", "none",
+                        "hibernate.dialect", "org.hibernate.dialect.OracleDialect",
                         "hibernate.physical_naming_strategy",
                         "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"
                 ))

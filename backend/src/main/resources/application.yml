@@ -20,7 +20,6 @@ spring:
       ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-    database-platform: org.hibernate.dialect.OracleDialect
   flyway:
     enabled: true
     url: ${MGMT_DATASOURCE_URL}
