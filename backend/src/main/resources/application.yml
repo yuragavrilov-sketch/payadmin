@@ -36,6 +36,7 @@ spring:
 logging:
   level:
     org.springframework.security: DEBUG
+    com.payadmin.infra: DEBUG
 
 winrm:
   encryption-key: ${WINRM_ENCRYPTION_KEY}

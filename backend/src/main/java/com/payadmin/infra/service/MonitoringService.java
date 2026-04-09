@@ -179,6 +179,10 @@ public class MonitoringService {
                         credential.getDomain(), credential.getUsername(), password,
                         psCommand);
 
+                log.debug("WinRM poll result for {} on {}: exit={}, stdout='{}', stderr='{}'",
+                        ms.getServiceName(), host.getHostname(),
+                        cmdResult.exitCode(), cmdResult.stdout(), cmdResult.stderr());
+
                 if (cmdResult.exitCode() == 0 && !cmdResult.stdout().isEmpty()) {
                     JsonNode json = objectMapper.readTree(cmdResult.stdout());
                     String status = json.has("Status") ? parseServiceStatus(json.get("Status")) : "Unknown";
