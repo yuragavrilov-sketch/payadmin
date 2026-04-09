@@ -33,6 +33,10 @@ spring:
         jwt:
           jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI}
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+
 winrm:
   encryption-key: ${WINRM_ENCRYPTION_KEY}
   monitor:
