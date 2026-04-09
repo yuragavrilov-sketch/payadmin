@@ -60,7 +60,7 @@ public class HostService {
         host.setDescription(dto.description());
 
         Host saved = hostRepository.save(host);
-        auditService.log("HOST_ADD", saved, null, "OK", null);
+        auditService.log("HOST_ADD", null, saved.getHostname(), "Success", null);
 
         return new HostDto(
                 saved.getId(),
