@@ -28,7 +28,7 @@ services:
       - WINRM_ENCRYPTION_KEY=${WINRM_ENCRYPTION_KEY:-docker-dev-key-min16}
 
   postgres:
-    image: postgres:16
+    image: postgres:16.4
     environment:
       POSTGRES_DB: payadmin_mgmt
       POSTGRES_USER: ${POSTGRES_USER:-payadmin}
