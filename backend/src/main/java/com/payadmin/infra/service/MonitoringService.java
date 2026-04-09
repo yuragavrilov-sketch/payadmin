@@ -161,6 +161,31 @@ public class MonitoringService {
         Credential credential = host.getCredential();
         String password = cryptoService.decrypt(credential.getPasswordEncrypted());
 
+        // Check host reachability first
+        try {
+            WinRmService.CommandResult pingResult = winRmService.execute(
+                    host.getHostname(), host.getPort(), host.getUseHttps(),
+                    credential.getDomain(), credential.getUsername(), password,
+                    "hostname");
+            log.debug("Host {} reachable: exit={}, stdout='{}'",
+                    host.getHostname(), pingResult.exitCode(), pingResult.stdout());
+            host.setLastSeen(LocalDateTime.now());
+            hostRepository.save(host);
+        } catch (Exception e) {
+            log.warn("Host {} unreachable: {}", host.getHostname(), e.getMessage());
+            // Mark all services as Unknown
+            List<MonitoredService> services = monitoredServiceRepository.findByHostId(host.getId());
+            for (MonitoredService ms : services) {
+                ServiceStatusLog logEntry = new ServiceStatusLog();
+                logEntry.setMonitoredService(ms);
+                logEntry.setCheckedAt(LocalDateTime.now());
+                logEntry.setStatus("Unknown");
+                logEntry.setErrorMessage("Host unreachable: " + e.getMessage());
+                serviceStatusLogRepository.save(logEntry);
+            }
+            return;
+        }
+
         List<MonitoredService> services = monitoredServiceRepository.findByHostId(host.getId());
 
         for (MonitoredService ms : services) {
@@ -195,9 +220,6 @@ public class MonitoringService {
                     logEntry.setStatus("Unknown");
                     logEntry.setErrorMessage(cmdResult.stderr());
                 }
-
-                host.setLastSeen(LocalDateTime.now());
-                hostRepository.save(host);
 
             } catch (Exception e) {
                 log.error("Failed to poll service {} on host {}: {}",
