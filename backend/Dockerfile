@@ -21,6 +21,19 @@ COPY src ./src
 RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:17-jre
+
+# Import proxy CA certs into runtime JVM truststore (for Keycloak HTTPS)
+RUN echo | openssl s_client -showcerts -connect keycloak.prod.transcapital.com:443 2>/dev/null \
+    | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > /tmp/chain.pem \
+    && i=0 && while openssl x509 -outform PEM -out /tmp/cert-$i.pem -in /tmp/chain.pem 2>/dev/null; do \
+         keytool -importcert -noprompt -cacerts \
+           -alias "keycloak-$i" \
+           -file /tmp/cert-$i.pem \
+           -storepass changeit || true; \
+         sed -i '1,/END CERTIFICATE/d' /tmp/chain.pem; \
+         i=$((i+1)); \
+       done && rm -f /tmp/chain.pem /tmp/cert-*.pem
+
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
