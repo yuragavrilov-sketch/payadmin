@@ -31,5 +31,5 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
 
   const text = await res.text()
-  return text ? JSON.parse(text) : undefined
+  return text ? JSON.parse(text) as T : undefined as unknown as T
 }
