@@ -64,7 +64,7 @@ public class WinRmService {
                 client.close();
             }
         } catch (Exception e) {
-            log.error("WinRM error on {}: {}", hostname, e.getMessage());
+            log.error("WinRM error on {}: {}", hostname, e.getMessage(), e);
             throw new RuntimeException("WinRM connection failed: " + e.getMessage(), e);
         }
     }
