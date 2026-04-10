@@ -4,7 +4,7 @@
       <id>nexus-http</id>
       <name>Nexus (HTTP allowed)</name>
       <url>http://10.199.11.222:8081/repository/maven-public/</url>
-      <mirrorOf>*</mirrorOf>
+      <mirrorOf>external:*,!nexus-http</mirrorOf>
       <blocked>false</blocked>
     </mirror>
   </mirrors>

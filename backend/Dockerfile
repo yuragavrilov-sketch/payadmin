@@ -15,11 +15,12 @@ RUN echo | openssl s_client -showcerts -connect repo.maven.apache.org:443 2>/dev
        done && echo "Imported $i certificate(s)"
 
 WORKDIR /app
-COPY .mvn/settings.xml /root/.m2/settings.xml
+COPY .mvn/settings.xml /usr/share/maven/conf/settings.xml
+RUN mkdir -p /root/.m2 && cp /usr/share/maven/conf/settings.xml /root/.m2/settings.xml
 COPY pom.xml .
-RUN mvn -s /root/.m2/settings.xml dependency:go-offline -B || mvn -s /root/.m2/settings.xml dependency:go-offline -B
+RUN mvn dependency:go-offline -B || mvn dependency:go-offline -B
 COPY src ./src
-RUN mvn -s /root/.m2/settings.xml package -DskipTests -B
+RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:17-jre
 
