@@ -3,6 +3,7 @@ import { useHosts } from '@/hooks/useHosts'
 import { useCredentials } from '@/hooks/useCredentials'
 import { apiFetch } from '@/lib/api'
 import StatusBadge from '@/components/StatusBadge'
+import HostServicesDialog from '@/components/HostServicesDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -35,6 +36,7 @@ export default function HostsServersTab() {
   const { data: credentials } = useCredentials()
   const [showAdd, setShowAdd] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [servicesHost, setServicesHost] = useState<{ id: number; hostname: string } | null>(null)
 
   const [hostname, setHostname] = useState('')
   const [port, setPort] = useState(5985)
@@ -106,7 +108,11 @@ export default function HostsServersTab() {
               </TableRow>
             ) : (
               hosts.map((h) => (
-                <TableRow key={h.id}>
+                <TableRow
+                  key={h.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => setServicesHost({ id: h.id, hostname: h.hostname })}
+                >
                   <TableCell className="font-medium text-slate-800">{h.hostname}</TableCell>
                   <TableCell>{h.port}</TableCell>
                   <TableCell>
@@ -121,7 +127,7 @@ export default function HostsServersTab() {
                   <TableCell>
                     <button
                       className="text-red-500 hover:text-red-700 text-sm"
-                      onClick={() => setDeleteId(h.id)}
+                      onClick={(e) => { e.stopPropagation(); setDeleteId(h.id) }}
                       title="Delete"
                     >
                       🗑
@@ -185,6 +191,15 @@ export default function HostsServersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Host Services Dialog */}
+      <HostServicesDialog
+        open={servicesHost != null}
+        onClose={() => setServicesHost(null)}
+        hostId={servicesHost?.id ?? null}
+        hostname={servicesHost?.hostname ?? ''}
+        onRefresh={refresh}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteId != null} onOpenChange={(v) => !v && setDeleteId(null)}>
