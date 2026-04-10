@@ -23,7 +23,10 @@ import {
 
 function hostStatus(lastSeen: string | null): string {
   if (!lastSeen) return 'Offline'
-  const diff = Date.now() - new Date(lastSeen).getTime()
+  // Backend LocalDateTime is serialized as UTC without 'Z' suffix;
+  // append it so JS doesn't parse as local time
+  const iso = /[Zz]|[+-]\d{2}:?\d{2}$/.test(lastSeen) ? lastSeen : lastSeen + 'Z'
+  const diff = Date.now() - new Date(iso).getTime()
   return diff <= 5 * 60 * 1000 ? 'Online' : 'Offline'
 }
 
