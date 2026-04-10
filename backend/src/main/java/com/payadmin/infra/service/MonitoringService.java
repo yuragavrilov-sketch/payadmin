@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payadmin.infra.dto.MonitoringGroupDto;
 import com.payadmin.infra.dto.MonitoringServiceDto;
+import com.payadmin.infra.dto.WindowsServiceDto;
 import com.payadmin.infra.entity.*;
 import com.payadmin.infra.repository.*;
 import org.slf4j.Logger;
@@ -116,6 +117,48 @@ public class MonitoringService {
         }
 
         return result;
+    }
+
+    public List<WindowsServiceDto> listWindowsServices(Integer hostId) {
+        Host host = hostRepository.findById(hostId)
+                .orElseThrow(() -> new IllegalArgumentException("Host not found: " + hostId));
+        Credential credential = host.getCredential();
+        String password = cryptoService.decrypt(credential.getPasswordEncrypted());
+
+        String psCommand = "Get-Service | Select-Object Name,DisplayName,Status | ConvertTo-Json -Compress";
+
+        try {
+            WinRmService.CommandResult cmdResult = winRmService.execute(
+                    host.getHostname(), host.getPort(), host.getUseHttps(),
+                    credential.getDomain(), credential.getUsername(), password,
+                    psCommand);
+
+            if (cmdResult.exitCode() != 0 || cmdResult.stdout().isEmpty()) {
+                throw new RuntimeException("WinRM command failed: " + cmdResult.stderr());
+            }
+
+            JsonNode root = objectMapper.readTree(cmdResult.stdout());
+            List<WindowsServiceDto> services = new ArrayList<>();
+            if (root.isArray()) {
+                for (JsonNode node : root) {
+                    services.add(toWindowsServiceDto(node));
+                }
+            } else {
+                services.add(toWindowsServiceDto(root));
+            }
+            services.sort(Comparator.comparing(s -> s.name().toLowerCase()));
+            return services;
+        } catch (Exception e) {
+            log.error("Failed to list Windows services on {}: {}", host.getHostname(), e.getMessage());
+            throw new RuntimeException("Failed to list services: " + e.getMessage(), e);
+        }
+    }
+
+    private WindowsServiceDto toWindowsServiceDto(JsonNode node) {
+        String name = node.path("Name").asText("");
+        String displayName = node.path("DisplayName").asText("");
+        String status = parseServiceStatus(node.path("Status"));
+        return new WindowsServiceDto(name, displayName, status);
     }
 
     @Transactional("managementTransactionManager")

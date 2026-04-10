@@ -4,8 +4,10 @@ import com.payadmin.infra.dto.HostCreateDto;
 import com.payadmin.infra.dto.HostDto;
 import com.payadmin.infra.dto.MonitoredServiceCreateDto;
 import com.payadmin.infra.dto.MonitoredServiceDto;
+import com.payadmin.infra.dto.WindowsServiceDto;
 import com.payadmin.infra.service.HostService;
 import com.payadmin.infra.service.MonitoredServiceService;
+import com.payadmin.infra.service.MonitoringService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,14 @@ public class HostController {
 
     private final HostService hostService;
     private final MonitoredServiceService monitoredServiceService;
+    private final MonitoringService monitoringService;
 
-    public HostController(HostService hostService, MonitoredServiceService monitoredServiceService) {
+    public HostController(HostService hostService,
+                          MonitoredServiceService monitoredServiceService,
+                          MonitoringService monitoringService) {
         this.hostService = hostService;
         this.monitoredServiceService = monitoredServiceService;
+        this.monitoringService = monitoringService;
     }
 
     @GetMapping
@@ -57,5 +63,10 @@ public class HostController {
     @DeleteMapping("/{hostId}/services/{serviceId}")
     public void removeService(@PathVariable Integer hostId, @PathVariable Integer serviceId) {
         monitoredServiceService.deleteWithOwnerCheck(hostId, serviceId);
+    }
+
+    @GetMapping("/{id}/windows-services")
+    public List<WindowsServiceDto> listWindowsServices(@PathVariable Integer id) {
+        return monitoringService.listWindowsServices(id);
     }
 }

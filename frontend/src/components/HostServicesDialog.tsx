@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useHostServices } from '@/hooks/useHostServices'
 import { useServiceGroups } from '@/hooks/useServiceGroups'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import StatusBadge from '@/components/StatusBadge'
+import type { WindowsServiceDto } from '@/lib/infra-types'
 import {
   Dialog,
   DialogContent,
@@ -31,19 +33,59 @@ export default function HostServicesDialog({
   const { data: groups } = useServiceGroups()
 
   const [showAdd, setShowAdd] = useState(false)
-  const [serviceName, setServiceName] = useState('')
+  const [windowsServices, setWindowsServices] = useState<WindowsServiceDto[]>([])
+  const [loadingWindows, setLoadingWindows] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const [search, setSearch] = useState('')
+  const [selectedService, setSelectedService] = useState<WindowsServiceDto | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [groupId, setGroupId] = useState<number | ''>('')
   const [saving, setSaving] = useState(false)
 
+  const monitoredNames = useMemo(
+    () => new Set(services.map((s) => s.serviceName.toLowerCase())),
+    [services]
+  )
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    return windowsServices
+      .filter((s) => !monitoredNames.has(s.name.toLowerCase()))
+      .filter((s) =>
+        !q ||
+        s.name.toLowerCase().includes(q) ||
+        (s.displayName && s.displayName.toLowerCase().includes(q))
+      )
+      .slice(0, 100)
+  }, [windowsServices, search, monitoredNames])
+
+  useEffect(() => {
+    if (!showAdd || hostId == null) return
+    if (windowsServices.length > 0) return
+
+    setLoadingWindows(true)
+    setLoadError(null)
+    apiFetch<WindowsServiceDto[]>(`/infra/hosts/${hostId}/windows-services`)
+      .then(setWindowsServices)
+      .catch((e) => setLoadError(e.message || 'Failed to load services'))
+      .finally(() => setLoadingWindows(false))
+  }, [showAdd, hostId, windowsServices.length])
+
   function resetForm() {
-    setServiceName('')
+    setSelectedService(null)
     setDisplayName('')
     setGroupId('')
+    setSearch('')
+  }
+
+  function closeAdd() {
+    setShowAdd(false)
+    resetForm()
   }
 
   async function handleAdd() {
-    if (!serviceName || !groupId || hostId == null) return
+    if (!selectedService || !groupId || hostId == null) return
     setSaving(true)
     try {
       await apiFetch(`/infra/hosts/${hostId}/services`, {
@@ -51,14 +93,13 @@ export default function HostServicesDialog({
         body: JSON.stringify({
           hostId,
           groupId,
-          serviceName,
-          displayName: displayName || null,
+          serviceName: selectedService.name,
+          displayName: displayName || selectedService.displayName || null,
         }),
       })
       refresh()
       onRefresh()
-      setShowAdd(false)
-      resetForm()
+      closeAdd()
     } finally {
       setSaving(false)
     }
@@ -72,9 +113,15 @@ export default function HostServicesDialog({
     onRefresh()
   }
 
+  function handleClose() {
+    setWindowsServices([])
+    closeAdd()
+    onClose()
+  }
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Services on {hostname}</DialogTitle>
         </DialogHeader>
@@ -99,7 +146,7 @@ export default function HostServicesDialog({
             No monitored services on this host
           </div>
         ) : (
-          <div className="flex flex-col gap-1 max-h-80 overflow-auto">
+          <div className="flex flex-col gap-1 max-h-64 overflow-auto">
             {services.map((s) => (
               <div
                 key={s.id}
@@ -132,59 +179,97 @@ export default function HostServicesDialog({
 
         {showAdd && (
           <div className="mt-3 p-3 border border-slate-200 rounded-lg bg-white">
-            <div className="text-xs font-medium text-slate-700 mb-2">Add Service</div>
-            <div className="flex flex-col gap-2">
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Windows service name</label>
+            <div className="text-xs font-medium text-slate-700 mb-2">Add Service from {hostname}</div>
+
+            {loadingWindows ? (
+              <div className="text-sm text-slate-400 py-4 text-center">
+                Loading services from host...
+              </div>
+            ) : loadError ? (
+              <div className="text-sm text-red-600 py-2">{loadError}</div>
+            ) : (
+              <>
                 <Input
-                  value={serviceName}
-                  onChange={(e) => setServiceName(e.target.value)}
-                  placeholder="e.g. PayGateService"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search services..."
+                  className="mb-2"
                 />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Display name (optional)</label>
-                <Input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Friendly label"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Group</label>
-                <select
-                  className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
-                  value={groupId}
-                  onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : '')}
-                >
-                  <option value="">Select group...</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { setShowAdd(false); resetForm() }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleAdd}
-                  disabled={saving || !serviceName || !groupId}
-                >
-                  {saving ? 'Adding...' : 'Add'}
-                </Button>
-              </div>
-            </div>
+
+                <div className="flex flex-col gap-0.5 max-h-48 overflow-auto border border-slate-200 rounded-lg">
+                  {filtered.length === 0 ? (
+                    <div className="text-xs text-slate-400 py-4 text-center">
+                      {windowsServices.length === 0 ? 'No services loaded' : 'No matches'}
+                    </div>
+                  ) : (
+                    filtered.map((ws) => (
+                      <button
+                        key={ws.name}
+                        onClick={() => setSelectedService(ws)}
+                        className={`flex items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-slate-50 ${
+                          selectedService?.name === ws.name ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-slate-800 truncate">{ws.name}</div>
+                          {ws.displayName && (
+                            <div className="text-slate-500 truncate">{ws.displayName}</div>
+                          )}
+                        </div>
+                        <StatusBadge status={ws.status} />
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {selectedService && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <div className="text-xs text-slate-600">
+                      Selected: <span className="font-mono font-medium">{selectedService.name}</span>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Display name (optional)</label>
+                      <Input
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder={selectedService.displayName || 'Friendly label'}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">Group</label>
+                      <select
+                        className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+                        value={groupId}
+                        onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : '')}
+                      >
+                        <option value="">Select group...</option>
+                        {groups.map((g) => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 justify-end mt-3">
+                  <Button variant="outline" size="sm" onClick={closeAdd}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleAdd}
+                    disabled={saving || !selectedService || !groupId}
+                  >
+                    {saving ? 'Adding...' : 'Add'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={handleClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

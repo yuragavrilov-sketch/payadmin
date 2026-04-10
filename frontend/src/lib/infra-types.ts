@@ -28,6 +28,9 @@ export interface AuditLogDto {
   hostname: string | null; serviceName: string | null;
   result: string; errorDetail: string | null
 }
+export interface WindowsServiceDto {
+  name: string; displayName: string; status: string
+}
 export interface PageResponse<T> {
   content: T[]; totalElements: number; totalPages: number;
   number: number; size: number
