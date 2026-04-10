@@ -106,7 +106,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <nexus.url>http://127.0.0.1:8081/repository/maven-public/</nexus.url>
+        <nexus.url>http://10.199.11.222:8081/repository/maven-public/</nexus.url>
     </properties>
 
     <build>
